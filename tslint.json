@@ -1,0 +1,15 @@
+{
+    "defaultSeverity": "error",
+    "extends": ["tslint:recommended", "tslint-plugin-prettier", "tslint-config-prettier"],
+    "rules": {
+        "interface-name": false,
+        "variable-name": {
+            "options": [
+                "ban-keywords",
+                "check-format",
+                "allow-leading-underscore"
+            ]
+        },
+        "prettier": true
+    }
+}
