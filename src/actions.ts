@@ -1,4 +1,4 @@
-import { Agent, GameInstance, noop, RegalError, TrackedEvent } from "regal";
+import { Agent, EventFunction, GameInstance, TrackedEvent } from "regal";
 import { abilityList } from "./agents";
 import { log, on, simpleCap, State } from "./common";
 import { promptSacrifice } from "./events";
@@ -54,29 +54,30 @@ export class Action<T = void> extends Agent {
         public name: string,
         public aliases: string[],
         public matchCheck: MatchCheck<T, Action>,
-        public effect: (result: T) => TrackedEvent
+        public effect: (result: T) => TrackedEvent<State>
     ) {
         super();
     }
 }
 
-export class ExamineAction extends Action {
+export class SimpleAction extends Action {
     constructor(
+        actionName: string,
+        actionAliases: string[],
         targetName: string,
         targetAliases: string[],
-        effect: TrackedEvent
+        effect: EventFunction<State>
     ) {
         const allNames = [targetName]
             .concat(targetAliases)
             .map(str => str.toLocaleLowerCase());
 
         super(
-            `examine '${targetName}'`,
-            ["examine", "look", "check"],
+            `${actionName} '${targetName}'`,
+            [actionName].concat(actionAliases),
             checkAliases((action, command, game) => {
                 if (matchBeginning(action, command).match) {
                     const cmdLower = command.toLocaleLowerCase();
-                    // const arr = cmdLower.split(" ");
 
                     for (const name of allNames) {
                         if (cmdLower.includes(name)) {
@@ -87,8 +88,32 @@ export class ExamineAction extends Action {
 
                 return { match: false };
             }),
-            () => effect
+            () =>
+                on(
+                    `${actionName.toLocaleUpperCase()} <${targetName.toLocaleUpperCase()}>`,
+                    effect
+                )
         );
+    }
+}
+
+export class ExamineAction extends SimpleAction {
+    constructor(
+        targetName: string,
+        targetAliases: string[],
+        effect: EventFunction<State>
+    ) {
+        super("examine", ["look", "check"], targetName, targetAliases, effect);
+    }
+}
+
+export class OpenAction extends SimpleAction {
+    constructor(
+        targetName: string,
+        targetAliases: string[],
+        effect: EventFunction<State>
+    ) {
+        super("open", [], targetName, targetAliases, effect);
     }
 }
 

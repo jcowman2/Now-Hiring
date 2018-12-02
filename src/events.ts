@@ -1,8 +1,8 @@
-import { noop, RegalError } from "regal";
+import { noop } from "regal";
 import { sacrificeAbilityAction } from "./actions";
 import { Abilities, abilityList, Room } from "./agents";
 import { log, on, simpleCap } from "./common";
-import { threeCups } from "./three-cups";
+import { ThreeCups } from "./three-cups";
 
 export const summarizeAbilities = on("SUM_ABILITIES", game => {
     game.output.writeMajor("Current status of your abilities:");
@@ -38,7 +38,7 @@ export const init = on("INIT", game => {
     game.state.availableActions = [];
 
     game.output.writeMajor("Startup successful!");
-    return summarizeAbilities.then(enterRoom(game.using(threeCups)));
+    return summarizeAbilities.then(enterRoom(game.using(new ThreeCups())));
 });
 
 export const command = (cmd: string) =>

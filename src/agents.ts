@@ -38,11 +38,14 @@ export class Item extends Agent {
 }
 
 export class Room extends Agent {
+    public onBegin: TrackedEvent<State>;
+
     constructor(
         public name: string,
         public onDescribe: TrackedEvent<State>,
-        public onBegin: TrackedEvent<State>
+        _onBegin: (room: Room) => TrackedEvent<State>
     ) {
         super();
+        this.onBegin = _onBegin(this);
     }
 }

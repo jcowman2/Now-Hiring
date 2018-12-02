@@ -1,3 +1,4 @@
+import * as readline from "readline-sync";
 import {
     Game,
     GameResponse,
@@ -44,22 +45,13 @@ Game.init({
 onStartCommand(init);
 onPlayerCommand(command);
 
-const cmds = [
-    "sacrifice vision",
-    "examine cups",
-    "examine counter",
-    "examine cups",
-    "look at the left cup",
-    "examine right cup",
-    "check middle cup"
-];
-
 let r = Game.postStartCommand();
 writeOut(r);
 
-while (cmds.length > 0) {
-    const cmd = cmds.shift();
-    console.log(`\n> ${cmd}\n`);
+let cmd: string;
+
+while (cmd !== "quit") {
+    cmd = readline.question("\n> ");
     r = Game.postPlayerCommand(r.instance, cmd);
     writeOut(r);
 }
