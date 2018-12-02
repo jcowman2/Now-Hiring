@@ -19,6 +19,18 @@ export class Abilities extends Agent {
     public touch = new Ability("touch", 2, 3);
     public mobility = new Ability("mobility", 3, 4);
     public cognition = new Ability("cognition", 3, 4);
+
+    public getList = () => {
+        return [
+            this.vision,
+            this.hearing,
+            this.smell,
+            this.taste,
+            this.touch,
+            this.mobility,
+            this.cognition
+        ];
+    };
 }
 
 export const abilityList = (ab: Abilities) => [

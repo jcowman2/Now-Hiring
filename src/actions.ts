@@ -89,7 +89,7 @@ export const sacrificeAbilityAction = new Action<string>(
     }),
     ability =>
         on("SACRIFICE ABILITY", game => {
-            for (const ab of abilityList(game.state.abilities)) {
+            for (const ab of game.state.abilities.getList()) {
                 if (ability === ab.name) {
                     if (ab.currentValue > 0) {
                         game.output.writeNormal(
