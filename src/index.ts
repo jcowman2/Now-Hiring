@@ -38,18 +38,20 @@ const writeOut = (response: GameResponse) => {
 Game.init({
     author: "Joe Cowman",
     name: "Ludum Dare 43",
-    options: {}
+    options: { debug: false }
 });
 
 onStartCommand(init);
 onPlayerCommand(command);
 
 const cmds = [
-    "floop",
-    "sacrifice goof",
     "sacrifice vision",
-    "sacrifice taste",
-    "sacrifice taste"
+    "examine cups",
+    "examine counter",
+    "examine cups",
+    "look at the left cup",
+    "examine right cup",
+    "check middle cup"
 ];
 
 let r = Game.postStartCommand();

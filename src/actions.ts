@@ -61,8 +61,34 @@ export class Action<T = void> extends Agent {
 }
 
 export class ExamineAction extends Action {
-    constructor(effect: TrackedEvent) {
-        super("examine", ["look"], checkAliases(strMatch), () => effect);
+    constructor(
+        targetName: string,
+        targetAliases: string[],
+        effect: TrackedEvent
+    ) {
+        const allNames = [targetName]
+            .concat(targetAliases)
+            .map(str => str.toLocaleLowerCase());
+
+        super(
+            `examine '${targetName}'`,
+            ["examine", "look", "check"],
+            checkAliases((action, command, game) => {
+                if (matchBeginning(action, command).match) {
+                    const cmdLower = command.toLocaleLowerCase();
+                    // const arr = cmdLower.split(" ");
+
+                    for (const name of allNames) {
+                        if (cmdLower.includes(name)) {
+                            return { match: true };
+                        }
+                    }
+                }
+
+                return { match: false };
+            }),
+            () => effect
+        );
     }
 }
 
@@ -97,7 +123,7 @@ export const sacrificeAbilityAction = new Action<string>(
                                 ab.currentValue
                             } to ${--ab.currentValue}.`
                         );
-                        return noop;
+                        return game.state.currentRoom.onBegin;
                     } else {
                         game.output.writeNormal(
                             "That ability is already depleted. It can't go any lower!"

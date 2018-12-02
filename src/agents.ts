@@ -40,8 +40,8 @@ export class Item extends Agent {
 export class Room extends Agent {
     constructor(
         public name: string,
-        public roomItems: Item[],
-        public describeEvent: TrackedEvent<State>
+        public onDescribe: TrackedEvent<State>,
+        public onBegin: TrackedEvent<State>
     ) {
         super();
     }
