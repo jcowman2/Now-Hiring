@@ -19,5 +19,8 @@
   },
   "dependencies": {
     "regal": "^0.6.1"
+  },
+  "prettier": {
+    "tabWidth": 4
   }
 }
