@@ -1,8 +1,12 @@
-import { Game, GameResponse, onStartCommand, OutputLineType } from "regal";
-import { inspect } from "util";
-import { init } from "./events";
-
-const log = o => console.log(inspect(o, { depth: Infinity }));
+import {
+    Game,
+    GameResponse,
+    onPlayerCommand,
+    onStartCommand,
+    OutputLineType
+} from "regal";
+import { log } from "./common";
+import { command, init } from "./events";
 
 const writeOut = (response: GameResponse) => {
     if (!response.output.wasSuccessful) {
@@ -38,5 +42,22 @@ Game.init({
 });
 
 onStartCommand(init);
+onPlayerCommand(command);
 
-writeOut(Game.postStartCommand());
+const cmds = [
+    "floop",
+    "sacrifice goof",
+    "sacrifice vision",
+    "sacrifice taste",
+    "sacrifice taste"
+];
+
+let r = Game.postStartCommand();
+writeOut(r);
+
+while (cmds.length > 0) {
+    const cmd = cmds.shift();
+    console.log(`\n> ${cmd}\n`);
+    r = Game.postPlayerCommand(r.instance, cmd);
+    writeOut(r);
+}

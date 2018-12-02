@@ -21,6 +21,16 @@ export class Abilities extends Agent {
     public cognition = new Ability("cognition", 3, 4);
 }
 
+export const abilityList = (ab: Abilities) => [
+    ab.vision,
+    ab.hearing,
+    ab.smell,
+    ab.taste,
+    ab.touch,
+    ab.mobility,
+    ab.cognition
+];
+
 export class Item extends Agent {
     constructor(public name: string) {
         super();

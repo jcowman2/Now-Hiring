@@ -1,58 +1,60 @@
-import { Agent, GameInstance, TrackedEvent } from "regal";
-import { on, State } from "./common";
+import { Agent, GameInstance, noop, RegalError, TrackedEvent } from "regal";
+import { abilityList } from "./agents";
+import { log, on, simpleCap, State } from "./common";
+import { promptSacrifice } from "./events";
 
-const simpleMatch = (
-    action: Action,
+interface MatchResult<T> {
+    match: boolean;
+    result?: T;
+}
+
+type MatchCheck<T, ActionType = Action> = (
+    action: ActionType,
     command: string,
-    game: GameInstance<State>
-) => {
-    const cmdLower = command.toLocaleLowerCase();
+    game?: GameInstance<State>
+) => MatchResult<T>;
 
-    const checkMatch = (alias: string) =>
-        alias.toLocaleLowerCase() === cmdLower;
+const checkAliases = <T>(
+    matchCheck: MatchCheck<T, string>
+): MatchCheck<T, Action> => {
+    return (action, command, game) => {
+        let mr = matchCheck(action.name, command, game);
 
-    if (checkMatch(action.name)) {
-        return true;
-    }
-
-    for (const alias of action.aliases) {
-        if (checkMatch(alias)) {
-            return true;
+        if (mr.match) {
+            return mr;
         }
-    }
 
-    return false;
+        for (const alias of action.aliases) {
+            mr = matchCheck(alias, command, game);
+            if (mr.match) {
+                return mr;
+            }
+        }
+
+        return { match: false };
+    };
 };
 
-const matchBeginning = (
-    action: Action,
-    command: string,
-    game: GameInstance<State>
-) => {
+const strMatch: MatchCheck<void, string> = (action, command, game) => {
     const cmdLower = command.toLocaleLowerCase();
-
-    const checkMatch = (alias: string) =>
-        cmdLower.startsWith(alias.toLocaleLowerCase());
-
-    if (checkMatch(action.name)) {
-        return true;
-    }
-
-    for (const alias of action.aliases) {
-        if (checkMatch(alias)) {
-            return true;
-        }
-    }
-
-    return false;
+    return {
+        match: action.toLocaleLowerCase() === cmdLower
+    };
 };
 
-export class Action extends Agent {
+const matchBeginning: MatchCheck<void, string> = (action, command, game) => {
+    const cmdLower = command.toLocaleLowerCase();
+    return {
+        match: cmdLower.startsWith(action.toLocaleLowerCase())
+    };
+};
+
+export class Action<T = void> extends Agent {
     constructor(
         public name: string,
-        public effect: TrackedEvent,
-        public aliases: string[] = [],
-        public isMatch = simpleMatch
+        public aliases: string[],
+        public matchCheck: MatchCheck<T, Action>,
+        public effect: (result: T) => TrackedEvent
     ) {
         super();
     }
@@ -60,15 +62,51 @@ export class Action extends Agent {
 
 export class ExamineAction extends Action {
     constructor(effect: TrackedEvent) {
-        super("examine", effect, ["look"]);
+        super("examine", ["look"], checkAliases(strMatch), () => effect);
     }
 }
 
-export const sacrificeAbilityAction = new Action(
+export const sacrificeAbilityAction = new Action<string>(
     "sacrifice",
-    on("SACRIFICE ABILITY", game => {
-        const arr = // TODO
-    }),
     [],
-    matchBeginning
+    checkAliases((action, command, game) => {
+        if (!matchBeginning(action, command).match) {
+            return { match: false };
+        }
+
+        const arr = command.split(" ");
+        if (arr.length !== 2) {
+            game.output.writeMajor(
+                "Illegal use of 'sacrifice' command. Usage: 'sacrifice <ABILITY_NAME>'"
+            );
+            return { match: false };
+        }
+
+        return {
+            match: true,
+            result: arr[1].toLocaleLowerCase()
+        };
+    }),
+    ability =>
+        on("SACRIFICE ABILITY", game => {
+            for (const ab of abilityList(game.state.abilities)) {
+                if (ability === ab.name) {
+                    if (ab.currentValue > 0) {
+                        game.output.writeNormal(
+                            `${simpleCap(ab.name)} decreased from ${
+                                ab.currentValue
+                            } to ${--ab.currentValue}.`
+                        );
+                        return noop;
+                    } else {
+                        game.output.writeNormal(
+                            "That ability is already depleted. It can't go any lower!"
+                        );
+                        return promptSacrifice;
+                    }
+                }
+            }
+            game.output.writeNormal(`The ability '${ability}' does not exist!`);
+            return promptSacrifice;
+        })
 );

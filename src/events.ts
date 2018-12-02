@@ -1,23 +1,13 @@
-import { Abilities, Room } from "./agents";
-import { on, simpleCap } from "./common";
+import { noop, RegalError } from "regal";
+import { sacrificeAbilityAction } from "./actions";
+import { Abilities, abilityList, Room } from "./agents";
+import { log, on, simpleCap } from "./common";
 import { threeCups } from "./rooms";
 
 export const summarizeAbilities = on("SUM_ABILITIES", game => {
-    const a = game.state.abilities;
-
-    const abs = [
-        a.vision,
-        a.hearing,
-        a.smell,
-        a.taste,
-        a.touch,
-        a.mobility,
-        a.cognition
-    ];
-
     game.output.writeMajor("Current status of your abilities:");
 
-    for (const ability of abs) {
+    for (const ability of abilityList(game.state.abilities)) {
         game.output.writeNormal(
             `${simpleCap(ability.name)}: ${ability.currentValue}/${
                 ability.maxValue
@@ -31,7 +21,9 @@ export const promptSacrifice = on("PROMPT SACRIFICE", game => {
         "\nBefore you can solve this puzzle, you must sacrifice one of your ability points.",
         "You may also reallocate your abilities, if you wish."
     );
-    game.output.writeMinor('Enter "sacrifice ABILITY_NAME" or "reallocate".');
+    game.output.writeMinor("Enter 'sacrifice <ABILITY_NAME>' or 'reallocate'.");
+
+    game.state.availableActions = [sacrificeAbilityAction];
 });
 
 export const enterRoom = (room: Room) =>
@@ -43,6 +35,20 @@ export const enterRoom = (room: Room) =>
 
 export const init = on("INIT", game => {
     game.state.abilities = new Abilities();
+    game.state.availableActions = [];
+
     game.output.writeMajor("Startup successful!");
     return summarizeAbilities.then(enterRoom(game.using(threeCups)));
 });
+
+export const command = (cmd: string) =>
+    on("COMMAND", game => {
+        for (const action of game.state.availableActions) {
+            const rm = action.matchCheck(action, cmd, game);
+            if (rm.match) {
+                return action.effect(rm.result);
+            }
+        }
+        game.output.writeNormal("Sorry, I didn't understand that.");
+        return noop;
+    });
