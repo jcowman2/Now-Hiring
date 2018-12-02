@@ -3,6 +3,8 @@
     "extends": ["tslint:recommended", "tslint-plugin-prettier", "tslint-config-prettier"],
     "rules": {
         "interface-name": false,
+        "max-classes-per-file": false,
+        "no-console": false,
         "variable-name": {
             "options": [
                 "ban-keywords",
