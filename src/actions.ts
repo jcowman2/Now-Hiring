@@ -113,7 +113,7 @@ export class OpenAction extends SimpleAction {
         targetAliases: string[],
         effect: EventFunction<State>
     ) {
-        super("open", [], targetName, targetAliases, effect);
+        super("open", ["pull"], targetName, targetAliases, effect);
     }
 }
 

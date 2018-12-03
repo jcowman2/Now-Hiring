@@ -1,5 +1,5 @@
-import { Agent } from "regal";
-import { ExamineAction } from "./actions";
+import { Agent, Game } from "regal";
+import { Action, ExamineAction, OpenAction } from "./actions";
 import { Room } from "./agents";
 import { on, safeShuffle } from "./common";
 
@@ -21,6 +21,61 @@ const describeFunc = on("DESCRIBE ROOM <Three Cups>", game => {
         "On the opposite wall, there is a padlocked door."
     );
 });
+
+const nailActions = () => [
+    new ExamineAction("nails", ["nail"], game => {
+        game.output.writeNormal(
+            "Each nail is a dull metal, with slight discolorations of rust."
+        );
+    })
+];
+
+const cookieActions = () => [
+    new ExamineAction("cookie", [], game => {
+        game.output.writeNormal("Seems like chocolate chip.");
+    })
+];
+
+const openDrawer = (room: ThreeCups) =>
+    new OpenAction("drawer", ["knob"], game => {
+        let contentStr: string;
+        const newActions: Action[] = [];
+
+        if (!room.cookieInDrawer && room.nailsInDrawer === 0) {
+            contentStr = "There's nothing left inside.";
+        } else {
+            if (room.nailsInDrawer > 0) {
+                newActions.push(...nailActions());
+
+                if (room.nailsInDrawer > 1) {
+                    contentStr = `There are ${room.nailsInDrawer} nails`;
+                } else {
+                    contentStr = "There is one nail";
+                }
+
+                if (room.cookieInDrawer) {
+                    newActions.push(...cookieActions());
+                    contentStr += " and a cookie inside.";
+                } else {
+                    contentStr += " inside.";
+                }
+            } else {
+                newActions.push(...cookieActions());
+                contentStr = "There is a cookie inside.";
+            }
+        }
+
+        game.output.writeNormal(`You open the drawer. ${contentStr}`);
+
+        const actions = game.state.availableActions;
+        actions.splice(actions.findIndex(aa => aa.name === "open 'drawer'"), 1);
+        actions.push(...newActions);
+        actions.push(
+            new OpenAction("drawer", ["knob"], _game => {
+                _game.output.writeNormal("The drawer is already open.");
+            })
+        );
+    });
 
 const beginFunc = (_room: ThreeCups) =>
     on("BEGIN ROOM <Three Cups>", game => {
@@ -81,12 +136,18 @@ const beginFunc = (_room: ThreeCups) =>
                     "The padlock is about the size of your fist.",
                     "It's metal, but it looks much older than the door."
                 );
-            })
+            }),
+            openDrawer(room)
         ];
+
+        game.output.writeNormal("You may begin.");
     });
 
 export class ThreeCups extends Room {
     public cups: Cup[];
+    public drawerIsOpen = false;
+    public nailsInDrawer = 3;
+    public cookieInDrawer = true;
 
     constructor() {
         super("Three Cups", describeFunc, beginFunc);
