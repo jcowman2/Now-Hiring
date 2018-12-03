@@ -59,3 +59,10 @@ export const command = (cmd: string) =>
         game.output.writeNormal("Sorry, I didn't understand that.");
         return noop;
     });
+
+export const describeHolding = on("DESCRIBE HOLDING", game => {
+    const holding = game.state.holding;
+    if (holding !== undefined) {
+        game.output.writeNormal(`You are holding the ${holding}.`);
+    }
+});

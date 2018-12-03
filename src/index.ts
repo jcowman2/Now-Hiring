@@ -48,10 +48,13 @@ onPlayerCommand(command);
 let r = Game.postStartCommand();
 writeOut(r);
 
+const interact = false;
+const commands = ["sacrifice vision", "look around", "quit"];
+
 let cmd: string;
 
 while (cmd !== "quit") {
-    cmd = readline.question("\n> ");
+    cmd = interact ? readline.question("\n> ") : commands.shift();
     r = Game.postPlayerCommand(r.instance, cmd);
     writeOut(r);
 }

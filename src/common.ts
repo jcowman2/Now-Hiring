@@ -9,6 +9,7 @@ export interface State {
     abilities: Abilities;
     currentRoom: Room;
     availableActions: Array<Action<any>>;
+    holding: string;
 }
 
 export const on: GameEventBuilder<State> = _on;

@@ -1,5 +1,11 @@
 import { Agent, Game } from "regal";
-import { Action, ExamineAction, OpenAction } from "./actions";
+import {
+    Action,
+    ExamineAction,
+    OpenAction,
+    PickupAction,
+    removeAction
+} from "./actions";
 import { Room } from "./agents";
 import { on, safeShuffle } from "./common";
 
@@ -22,17 +28,31 @@ const describeFunc = on("DESCRIBE ROOM <Three Cups>", game => {
     );
 });
 
-const nailActions = () => [
+const nailActions = (room: ThreeCups) => [
     new ExamineAction("nails", ["nail"], game => {
         game.output.writeNormal(
             "Each nail is a dull metal, with slight discolorations of rust."
         );
+    }),
+    new PickupAction("nails", [], game => {
+        if (room.nailsInDrawer === 1) {
+            game.output.writeNormal("You pick up the nail.");
+            game.state.holding = "nail";
+        } else {
+            game.output.writeNormal("You pick up the nails.");
+            game.state.holding = `${room.nailsInDrawer} nails`;
+        }
+        room.nailsInDrawer--;
     })
 ];
 
-const cookieActions = () => [
+const cookieActions = (room: ThreeCups) => [
     new ExamineAction("cookie", [], game => {
         game.output.writeNormal("Seems like chocolate chip.");
+    }),
+    new PickupAction("cookie", [], game => {
+        game.output.writeNormal("You pick up the cookie.");
+        room.cookieInDrawer = false;
     })
 ];
 
@@ -45,7 +65,7 @@ const openDrawer = (room: ThreeCups) =>
             contentStr = "There's nothing left inside.";
         } else {
             if (room.nailsInDrawer > 0) {
-                newActions.push(...nailActions());
+                newActions.push(...nailActions(room));
 
                 if (room.nailsInDrawer > 1) {
                     contentStr = `There are ${room.nailsInDrawer} nails`;
@@ -54,13 +74,13 @@ const openDrawer = (room: ThreeCups) =>
                 }
 
                 if (room.cookieInDrawer) {
-                    newActions.push(...cookieActions());
+                    newActions.push(...cookieActions(room));
                     contentStr += " and a cookie inside.";
                 } else {
                     contentStr += " inside.";
                 }
             } else {
-                newActions.push(...cookieActions());
+                newActions.push(...cookieActions(room));
                 contentStr = "There is a cookie inside.";
             }
         }
@@ -68,7 +88,7 @@ const openDrawer = (room: ThreeCups) =>
         game.output.writeNormal(`You open the drawer. ${contentStr}`);
 
         const actions = game.state.availableActions;
-        actions.splice(actions.findIndex(aa => aa.name === "open 'drawer'"), 1);
+        removeAction(game, "open 'drawer'");
         actions.push(...newActions);
         actions.push(
             new OpenAction("drawer", ["knob"], _game => {
@@ -83,62 +103,79 @@ const beginFunc = (_room: ThreeCups) =>
         const cups = safeShuffle(game.using([milk, water, acid]), game);
         room.cups = cups;
 
-        game.state.availableActions = [
-            new ExamineAction("counter", ["table"], _game => {
-                _game.output.writeNormal(
-                    "The countertop is dark and matte.",
-                    "It has three glass cups sitting on top of it, and a small drawer at waist height."
-                );
-            }),
-            new ExamineAction("cups", ["glasses"], _game => {
-                _game.output.writeNormal(
-                    "Three glass cups sit in a row on the countertop. Each is about halfway full of some liquid.",
-                    `The left cup contains a ${cups[0].color} liquid.`,
-                    `The middle cup contains a ${cups[1].color} liquid.`,
-                    `The right cup contains a ${cups[2].color} liquid.`
-                );
-            }),
-            new ExamineAction("left cup", ["left glass"], _game => {
-                _game.output.writeNormal(
-                    `The left cup is clear, probably made of glass. It's halfway full of some ${
-                        cups[0].color
-                    } liquid.`
-                );
-            }),
-            new ExamineAction("middle cup", ["middle glass"], _game => {
-                _game.output.writeNormal(
-                    `The middle cup is clear, probably made of glass. It's halfway full of some ${
-                        cups[1].color
-                    } liquid.`
-                );
-            }),
-            new ExamineAction("right cup", ["right glass"], _game => {
-                _game.output.writeNormal(
-                    `The right cup is clear, probably made of glass. It's halfway full of some ${
-                        cups[2].color
-                    } liquid.`
-                );
-            }),
-            new ExamineAction("drawer", [], _game => {
-                _game.output.writeNormal(
-                    "There's a small drawer in the front of the counter. It has a wooden knob."
-                );
-            }),
-            new ExamineAction("door", [], _game => {
-                _game.output.writeNormal(
-                    "The door at the back of the room looks heavy.",
-                    "It's a shiny silver, likely stainless steel.",
-                    "A large padlock holds the door shut."
-                );
-            }),
-            new ExamineAction("padlock", ["lock"], _game => {
-                _game.output.writeNormal(
-                    "The padlock is about the size of your fist.",
-                    "It's metal, but it looks much older than the door."
-                );
-            }),
-            openDrawer(room)
-        ];
+        game.state.availableActions.push(
+            ...[
+                new ExamineAction("counter", ["table"], _game => {
+                    _game.output.writeNormal(
+                        "The countertop is dark and matte.",
+                        "It has three glass cups sitting on top of it, and a small drawer at waist height."
+                    );
+                }),
+                new ExamineAction("cups", ["glasses"], _game => {
+                    _game.output.writeNormal(
+                        "Three glass cups sit in a row on the countertop. Each is about halfway full of some liquid.",
+                        `The left cup contains a ${cups[0].color} liquid.`,
+                        `The middle cup contains a ${cups[1].color} liquid.`,
+                        `The right cup contains a ${cups[2].color} liquid.`
+                    );
+                }),
+                new ExamineAction(
+                    "left cup",
+                    ["left glass", "first cup", "first glass"],
+                    _game => {
+                        _game.output.writeNormal(
+                            `The left cup is clear, probably made of glass. It's halfway full of some ${
+                                cups[0].color
+                            } liquid.`
+                        );
+                    }
+                ),
+                new ExamineAction(
+                    "middle cup",
+                    ["middle glass", "second cup", "second glass"],
+                    _game => {
+                        _game.output.writeNormal(
+                            `The middle cup is clear, probably made of glass. It's halfway full of some ${
+                                cups[1].color
+                            } liquid.`
+                        );
+                    }
+                ),
+                new ExamineAction(
+                    "right cup",
+                    ["right glass", "third cup", "third glass"],
+                    _game => {
+                        _game.output.writeNormal(
+                            `The right cup is clear, probably made of glass. It's halfway full of some ${
+                                cups[2].color
+                            } liquid.`
+                        );
+                    }
+                ),
+                new ExamineAction("cup", ["glass"], _game =>
+                    _game.output.writeNormal("Which cup?")
+                ),
+                new ExamineAction("drawer", [], _game => {
+                    _game.output.writeNormal(
+                        "There's a small drawer in the front of the counter. It has a wooden knob."
+                    );
+                }),
+                new ExamineAction("door", [], _game => {
+                    _game.output.writeNormal(
+                        "The door at the back of the room looks heavy.",
+                        "It's a shiny silver, likely stainless steel.",
+                        "A large padlock holds the door shut."
+                    );
+                }),
+                new ExamineAction("padlock", ["lock"], _game => {
+                    _game.output.writeNormal(
+                        "The padlock is about the size of your fist.",
+                        "It's metal, but it looks much older than the door."
+                    );
+                }),
+                openDrawer(room)
+            ]
+        );
 
         game.output.writeNormal("You may begin.");
     });

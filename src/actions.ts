@@ -1,4 +1,11 @@
-import { Agent, EventFunction, GameInstance, TrackedEvent } from "regal";
+import {
+    Agent,
+    EventFunction,
+    GameInstance,
+    noop,
+    RegalError,
+    TrackedEvent
+} from "regal";
 import { abilityList } from "./agents";
 import { log, on, simpleCap, State } from "./common";
 import { promptSacrifice } from "./events";
@@ -47,6 +54,18 @@ const matchBeginning: MatchCheck<void, string> = (action, command, game) => {
     return {
         match: cmdLower.startsWith(action.toLocaleLowerCase())
     };
+};
+
+export const removeAction = (game: GameInstance<State>, actionName: string) => {
+    const idx = game.state.availableActions.findIndex(
+        a => a.name === actionName
+    );
+
+    if (idx === -1) {
+        throw new RegalError("Action doesn't exist.");
+    }
+
+    game.state.availableActions.splice(idx, 1);
 };
 
 export class Action<T = void> extends Agent {
@@ -103,7 +122,13 @@ export class ExamineAction extends SimpleAction {
         targetAliases: string[],
         effect: EventFunction<State>
     ) {
-        super("examine", ["look", "check"], targetName, targetAliases, effect);
+        super(
+            "examine",
+            ["look", "check", "observe"],
+            targetName,
+            targetAliases,
+            effect
+        );
     }
 }
 
@@ -114,6 +139,33 @@ export class OpenAction extends SimpleAction {
         effect: EventFunction<State>
     ) {
         super("open", ["pull"], targetName, targetAliases, effect);
+    }
+}
+
+export class PickupAction extends SimpleAction {
+    constructor(
+        targetName: string,
+        targetAliases: string[],
+        effect: EventFunction<State>
+    ) {
+        super(
+            "pickup",
+            ["take", "grab", "pick up", "lift", "hold"],
+            targetName,
+            targetAliases,
+            game => {
+                if (game.state.holding !== undefined) {
+                    game.output.writeNormal(
+                        `You can't pick that up until you set down your '${
+                            game.state.holding
+                        }'.`
+                    );
+                    return noop;
+                } else {
+                    return effect;
+                }
+            }
+        );
     }
 }
 
@@ -148,6 +200,7 @@ export const sacrificeAbilityAction = new Action<string>(
                                 ab.currentValue
                             } to ${--ab.currentValue}.`
                         );
+                        removeAction(game, "sacrifice");
                         return game.state.currentRoom.onBegin;
                     } else {
                         game.output.writeNormal(

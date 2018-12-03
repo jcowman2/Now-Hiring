@@ -1,5 +1,7 @@
 import { Agent, TrackedEvent } from "regal";
-import { State } from "./common";
+import { ExamineAction } from "./actions";
+import { on, State } from "./common";
+import { describeHolding } from "./events";
 
 export class Ability extends Agent {
     constructor(
@@ -46,6 +48,17 @@ export class Room extends Agent {
         _onBegin: (room: Room) => TrackedEvent<State>
     ) {
         super();
-        this.onBegin = _onBegin(this);
+        this.onBegin = on(
+            `BEFORE BEGIN <${name.toLocaleUpperCase()}>`,
+            game => {
+                console.log("this should run once.");
+                game.state.availableActions.push(
+                    new ExamineAction("room", ["around"], () =>
+                        onDescribe.then(describeHolding)
+                    )
+                );
+                return _onBegin(this);
+            }
+        );
     }
 }
