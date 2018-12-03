@@ -49,7 +49,15 @@ let r = Game.postStartCommand();
 writeOut(r);
 
 const interact = true;
-const commands = ["sacrifice vision", "open drawer", "pickup cookie", "quit"];
+const commands = [
+    "sacrifice vision",
+    "open drawer",
+    "pickup nails",
+    "pickup nails",
+    "set nails down",
+    "look drawer",
+    "quit"
+];
 
 let cmd: string;
 

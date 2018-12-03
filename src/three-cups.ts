@@ -4,6 +4,7 @@ import {
     ExamineAction,
     OpenAction,
     PickupAction,
+    PutAction,
     removeAction
 } from "./actions";
 import { Room } from "./agents";
@@ -34,15 +35,44 @@ const nailActions = (room: ThreeCups) => [
             "Each nail is a dull metal, with slight discolorations of rust."
         );
     }),
-    new PickupAction("nails", [], game => {
+    new PickupAction("nails", ["3 nails", "2 nails"], game => {
         if (room.nailsInDrawer === 1) {
             game.output.writeNormal("You pick up the nail.");
             game.state.holding = "nail";
         } else {
             game.output.writeNormal("You pick up the nails.");
             game.state.holding = `${room.nailsInDrawer} nails`;
+
+            game.state.availableActions.push(
+                new PutAction(
+                    "nails",
+                    ["3 nails", "2 nails"],
+                    "down",
+                    ["back"],
+                    _game => {
+                        _game.output.writeNormal(
+                            "You put the nails back in the drawer."
+                        );
+
+                        room.nailsInDrawer = Number.parseInt(
+                            _game.state.holding.split(" ")[0],
+                            10
+                        ); // yikes
+
+                        _game.state.holding = undefined;
+                        removeAction(_game, "put 'nails' -> 'down'");
+                    }
+                )
+            );
         }
-        room.nailsInDrawer--;
+        room.nailsInDrawer = 0;
+
+        // removeAction(game, "pickup 'nails'");
+        // game.state.availableActions.push(
+        //     new PickupAction("nails", [], _game =>
+        //         _game.output.writeNormal("You're already holding that.")
+        //     )
+        // );
     })
 ];
 
@@ -56,36 +86,40 @@ const cookieActions = (room: ThreeCups) => [
     })
 ];
 
+const describeDrawer = (room: ThreeCups) => {
+    let contentStr: string;
+
+    if (!room.cookieInDrawer && room.nailsInDrawer === 0) {
+        contentStr = "There's nothing left inside.";
+    } else {
+        if (room.nailsInDrawer > 0) {
+            if (room.nailsInDrawer > 1) {
+                contentStr = `There are ${room.nailsInDrawer} nails`;
+            } else {
+                contentStr = "There is one nail";
+            }
+
+            if (room.cookieInDrawer) {
+                contentStr += " and a cookie inside.";
+            } else {
+                contentStr += " inside.";
+            }
+        } else {
+            contentStr = "There is a cookie inside.";
+        }
+    }
+
+    return contentStr;
+};
+
 const openDrawer = (room: ThreeCups) =>
     new OpenAction("drawer", ["knob"], game => {
-        let contentStr: string;
-        const newActions: Action[] = [];
+        room.drawerIsOpen = true;
 
-        if (!room.cookieInDrawer && room.nailsInDrawer === 0) {
-            contentStr = "There's nothing left inside.";
-        } else {
-            if (room.nailsInDrawer > 0) {
-                newActions.push(...nailActions(room));
+        const newActions = nailActions(room).concat(cookieActions(room));
 
-                if (room.nailsInDrawer > 1) {
-                    contentStr = `There are ${room.nailsInDrawer} nails`;
-                } else {
-                    contentStr = "There is one nail";
-                }
-
-                if (room.cookieInDrawer) {
-                    newActions.push(...cookieActions(room));
-                    contentStr += " and a cookie inside.";
-                } else {
-                    contentStr += " inside.";
-                }
-            } else {
-                newActions.push(...cookieActions(room));
-                contentStr = "There is a cookie inside.";
-            }
-        }
-
-        game.output.writeNormal(`You open the drawer. ${contentStr}`);
+        game.output.writeNormal(`You open the drawer.`);
+        game.output.writeNormal(describeDrawer(room));
 
         const actions = game.state.availableActions;
         removeAction(game, "open 'drawer'");
@@ -156,9 +190,16 @@ const beginFunc = (_room: ThreeCups) =>
                     _game.output.writeNormal("Which cup?")
                 ),
                 new ExamineAction("drawer", [], _game => {
-                    _game.output.writeNormal(
-                        "There's a small drawer in the front of the counter. It has a wooden knob."
-                    );
+                    if (room.drawerIsOpen) {
+                        const drawerStr = describeDrawer(room);
+                        _game.output.writeNormal(
+                            `There drawer is open. ${drawerStr}`
+                        );
+                    } else {
+                        _game.output.writeNormal(
+                            "There's a small drawer in the front of the counter. It has a wooden knob."
+                        );
+                    }
                 }),
                 new ExamineAction("door", [], _game => {
                     _game.output.writeNormal(

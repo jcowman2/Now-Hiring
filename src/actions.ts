@@ -116,6 +116,65 @@ export class SimpleAction extends Action {
     }
 }
 
+export class SubjectObjectAction extends Action {
+    constructor(
+        actionName: string,
+        actionAliases: string[],
+        subjectName: string,
+        subjectAliases: string[],
+        objectName: string,
+        objectAliases: string[],
+        requireHolding: boolean,
+        effect: EventFunction<State>
+    ) {
+        const subjectNames = [subjectName]
+            .concat(subjectAliases)
+            .map(s => s.toLocaleLowerCase());
+        const objectNames = [objectName]
+            .concat(objectAliases)
+            .map(s => s.toLocaleLowerCase());
+
+        super(
+            `${actionName} '${subjectName}' -> '${objectName}'`,
+            [actionName].concat(actionAliases),
+            checkAliases((action, command, game) => {
+                if (matchBeginning(action, command).match) {
+                    const cmdLower = command.toLocaleLowerCase();
+
+                    for (const subject of subjectNames) {
+                        const idx = cmdLower.indexOf(subject);
+
+                        if (idx > -1) {
+                            for (const object of objectNames) {
+                                if (cmdLower.indexOf(object) > idx) {
+                                    return { match: true };
+                                }
+                            }
+                        }
+                    }
+                }
+                return { match: false };
+            }),
+            () =>
+                on(
+                    `${actionName.toLocaleUpperCase()} <${subjectName.toLocaleUpperCase()}> -> <${objectName.toLocaleUpperCase()}>`,
+                    game => {
+                        if (
+                            requireHolding &&
+                            !subjectNames.includes(game.state.holding)
+                        ) {
+                            game.output.writeNormal(
+                                `You have to be holding '${subjectName}' before you can do that.`
+                            );
+                        }
+
+                        return on("ef", effect);
+                    }
+                )
+        );
+    }
+}
+
 export class ExamineAction extends SimpleAction {
     constructor(
         targetName: string,
@@ -148,6 +207,7 @@ export class PickupAction extends SimpleAction {
         targetAliases: string[],
         effect: EventFunction<State>
     ) {
+        const targetNames = [targetName].concat(targetAliases);
         super(
             "pickup",
             ["take", "grab", "pick up", "lift", "hold"],
@@ -155,11 +215,16 @@ export class PickupAction extends SimpleAction {
             targetAliases,
             game => {
                 if (game.state.holding !== undefined) {
-                    game.output.writeNormal(
-                        `You can't pick that up until you set down your ${
-                            game.state.holding
-                        }.`
-                    );
+                    if (targetNames.includes(game.state.holding)) {
+                        game.output.writeNormal("You're already holding that!");
+                    } else {
+                        game.output.writeNormal(
+                            `You can't pick that up until you set down your ${
+                                game.state.holding
+                            }.`
+                        );
+                    }
+
                     return noop;
                 } else {
                     return on(
@@ -217,3 +282,24 @@ export const sacrificeAbilityAction = new Action<string>(
             return promptSacrifice;
         })
 );
+
+export class PutAction extends SubjectObjectAction {
+    constructor(
+        targetName: string,
+        targetAliases: string[],
+        objectName: string,
+        objectAliases: string[],
+        effect: EventFunction<State>
+    ) {
+        super(
+            "put",
+            ["drop", "place", "set"],
+            targetName,
+            targetAliases,
+            objectName,
+            objectAliases,
+            true,
+            effect
+        );
+    }
+}
