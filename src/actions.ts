@@ -156,13 +156,16 @@ export class PickupAction extends SimpleAction {
             game => {
                 if (game.state.holding !== undefined) {
                     game.output.writeNormal(
-                        `You can't pick that up until you set down your '${
+                        `You can't pick that up until you set down your ${
                             game.state.holding
-                        }'.`
+                        }.`
                     );
                     return noop;
                 } else {
-                    return effect;
+                    return on(
+                        `PICKUP EFFECT <${targetName.toLocaleUpperCase()}>`,
+                        effect
+                    );
                 }
             }
         );

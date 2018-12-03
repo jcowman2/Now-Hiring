@@ -48,8 +48,8 @@ onPlayerCommand(command);
 let r = Game.postStartCommand();
 writeOut(r);
 
-const interact = false;
-const commands = ["sacrifice vision", "look around", "quit"];
+const interact = true;
+const commands = ["sacrifice vision", "open drawer", "pickup cookie", "quit"];
 
 let cmd: string;
 

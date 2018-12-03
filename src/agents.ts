@@ -51,7 +51,6 @@ export class Room extends Agent {
         this.onBegin = on(
             `BEFORE BEGIN <${name.toLocaleUpperCase()}>`,
             game => {
-                console.log("this should run once.");
                 game.state.availableActions.push(
                     new ExamineAction("room", ["around"], () =>
                         onDescribe.then(describeHolding)
