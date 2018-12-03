@@ -44,6 +44,28 @@ const acid = new Cup(
 
 const cupMoreDesc = (cup: Cup) => (cup.hasNail ? " " + cup.afterNail : "");
 
+const cupActions = (cup: Cup, dir: string, num: string) => [
+    new ExamineAction(
+        `${dir} cup`,
+        [`${dir} glass`, `${num} cup`, `${num} glass`],
+        _game => {
+            _game.output.writeNormal(
+                `The ${dir} cup is clear, probably made of glass. It's halfway full of some ${
+                    cup.color
+                } liquid.${cupMoreDesc(cup)}`
+            );
+        }
+    ),
+    new PickupAction(
+        `${dir} cup`,
+        [`${dir} glass`, `${num} cup`, `${num} glass`],
+        _game => {
+            _game.output.writeNormal(`You pick up the ${dir} cup.`);
+            _game.state.holding = `${dir} cup`;
+        }
+    )
+];
+
 const describeFunc = on("DESCRIBE ROOM <Three Cups>", game => {
     game.output.writeNormal(
         "The room is small and sterile, with a waist-high counter in the center.",
@@ -214,39 +236,9 @@ const beginFunc = (_room: ThreeCups) =>
                         } liquid.${cupMoreDesc(cups[2])}`
                     );
                 }),
-                new ExamineAction(
-                    "left cup",
-                    ["left glass", "first cup", "first glass"],
-                    _game => {
-                        _game.output.writeNormal(
-                            `The left cup is clear, probably made of glass. It's halfway full of some ${
-                                cups[0].color
-                            } liquid.${cupMoreDesc(cups[0])}`
-                        );
-                    }
-                ),
-                new ExamineAction(
-                    "middle cup",
-                    ["middle glass", "second cup", "second glass"],
-                    _game => {
-                        _game.output.writeNormal(
-                            `The middle cup is clear, probably made of glass. It's halfway full of some ${
-                                cups[1].color
-                            } liquid.${cupMoreDesc(cups[1])}`
-                        );
-                    }
-                ),
-                new ExamineAction(
-                    "right cup",
-                    ["right glass", "third cup", "third glass"],
-                    _game => {
-                        _game.output.writeNormal(
-                            `The right cup is clear, probably made of glass. It's halfway full of some ${
-                                cups[2].color
-                            } liquid.${cupMoreDesc(cups[2])}`
-                        );
-                    }
-                ),
+                ...cupActions(cups[0], "left", "first"),
+                ...cupActions(cups[1], "middle", "second"),
+                ...cupActions(cups[2], "right", "third"),
                 new ExamineAction("cup", ["glass"], _game =>
                     _game.output.writeNormal("Which cup?")
                 ),

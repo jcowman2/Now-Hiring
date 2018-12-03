@@ -219,7 +219,7 @@ export class PickupAction extends SimpleAction {
                         game.output.writeNormal("You're already holding that!");
                     } else {
                         game.output.writeNormal(
-                            `You can't pick that up until you set down your ${
+                            `You can't pick that up until you set down the ${
                                 game.state.holding
                             }.`
                         );
