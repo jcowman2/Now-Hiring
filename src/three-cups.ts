@@ -11,14 +11,38 @@ import { Room } from "./agents";
 import { on, safeShuffle } from "./common";
 
 class Cup extends Agent {
-    constructor(public name: string, public color: string) {
+    public hasNail = false;
+
+    constructor(
+        public name: string,
+        public color: string,
+        public nailReaction: string,
+        public afterNail: string
+    ) {
         super();
     }
 }
 
-const milk = new Cup("milk", "white");
-const water = new Cup("water", "clear");
-const acid = new Cup("acid", "clear");
+const milk = new Cup(
+    "milk",
+    "white",
+    "The nail is enveloped by the white liquid.",
+    "You can't see the nail."
+);
+const water = new Cup(
+    "water",
+    "clear",
+    "The nails sinks to the bottom quickly.",
+    "The nail is sitting at the bottom."
+);
+const acid = new Cup(
+    "acid",
+    "clear",
+    "The liquid begins to bubble violently.",
+    "It's still fizzing. The nail appears to be dissolving."
+);
+
+const cupMoreDesc = (cup: Cup) => (cup.hasNail ? " " + cup.afterNail : "");
 
 const describeFunc = on("DESCRIBE ROOM <Three Cups>", game => {
     game.output.writeNormal(
@@ -44,35 +68,66 @@ const nailActions = (room: ThreeCups) => [
             game.state.holding = `${room.nailsInDrawer} nails`;
 
             game.state.availableActions.push(
-                new PutAction(
-                    "nails",
-                    ["3 nails", "2 nails"],
-                    "down",
-                    ["back"],
-                    _game => {
-                        _game.output.writeNormal(
-                            "You put the nails back in the drawer."
-                        );
+                ...[
+                    new PutAction(
+                        "nails",
+                        ["3 nails", "2 nails"],
+                        "down",
+                        ["back"],
+                        _game => {
+                            _game.output.writeNormal(
+                                "You put the nails back in the drawer."
+                            );
 
-                        room.nailsInDrawer = Number.parseInt(
-                            _game.state.holding.split(" ")[0],
-                            10
-                        ); // yikes
+                            room.nailsInDrawer = Number.parseInt(
+                                _game.state.holding.split(" ")[0],
+                                10
+                            ); // yikes
 
-                        _game.state.holding = undefined;
-                        removeAction(_game, "put 'nails' -> 'down'");
-                    }
-                )
+                            _game.state.holding = undefined;
+                            removeAction(_game, "put 'nails' -> 'down'");
+                            removeAction(_game, "put 'nails' -> 'cups'");
+                        }
+                    ),
+                    new PutAction(
+                        "nails",
+                        ["3 nails", "2 nails"],
+                        "cups",
+                        ["glasses", "each cup", "each glass"],
+                        _game => {
+                            _game.output.writeNormal(
+                                `You drop a nail in the left cup. ${
+                                    room.cups[0].nailReaction
+                                }`
+                            );
+                            _game.output.writeNormal(
+                                `You drop a nail in the middle cup. ${
+                                    room.cups[1].nailReaction
+                                }`
+                            );
+                            _game.output.writeNormal(
+                                `You drop a nail in the right cup. ${
+                                    room.cups[2].nailReaction
+                                }`
+                            );
+
+                            room.cups.forEach(cup => (cup.hasNail = true));
+
+                            room.nailsInDrawer = Number.parseInt(
+                                _game.state.holding.split(" ")[0],
+                                10
+                            ); // yikes
+
+                            _game.state.holding = undefined;
+                            removeAction(_game, "put 'nails' -> 'down'");
+                            removeAction(_game, "put 'nails' -> 'cups'");
+                            removeAction(_game, "pickup 'nails'");
+                        }
+                    )
+                ]
             );
         }
         room.nailsInDrawer = 0;
-
-        // removeAction(game, "pickup 'nails'");
-        // game.state.availableActions.push(
-        //     new PickupAction("nails", [], _game =>
-        //         _game.output.writeNormal("You're already holding that.")
-        //     )
-        // );
     })
 ];
 
@@ -148,9 +203,15 @@ const beginFunc = (_room: ThreeCups) =>
                 new ExamineAction("cups", ["glasses"], _game => {
                     _game.output.writeNormal(
                         "Three glass cups sit in a row on the countertop. Each is about halfway full of some liquid.",
-                        `The left cup contains a ${cups[0].color} liquid.`,
-                        `The middle cup contains a ${cups[1].color} liquid.`,
-                        `The right cup contains a ${cups[2].color} liquid.`
+                        `The left cup contains a ${
+                            cups[0].color
+                        } liquid.${cupMoreDesc(cups[0])}`,
+                        `The middle cup contains a ${
+                            cups[1].color
+                        } liquid.${cupMoreDesc(cups[1])}`,
+                        `The right cup contains a ${
+                            cups[2].color
+                        } liquid.${cupMoreDesc(cups[2])}`
                     );
                 }),
                 new ExamineAction(
@@ -160,7 +221,7 @@ const beginFunc = (_room: ThreeCups) =>
                         _game.output.writeNormal(
                             `The left cup is clear, probably made of glass. It's halfway full of some ${
                                 cups[0].color
-                            } liquid.`
+                            } liquid.${cupMoreDesc(cups[0])}`
                         );
                     }
                 ),
@@ -171,7 +232,7 @@ const beginFunc = (_room: ThreeCups) =>
                         _game.output.writeNormal(
                             `The middle cup is clear, probably made of glass. It's halfway full of some ${
                                 cups[1].color
-                            } liquid.`
+                            } liquid.${cupMoreDesc(cups[1])}`
                         );
                     }
                 ),
@@ -182,7 +243,7 @@ const beginFunc = (_room: ThreeCups) =>
                         _game.output.writeNormal(
                             `The right cup is clear, probably made of glass. It's halfway full of some ${
                                 cups[2].color
-                            } liquid.`
+                            } liquid.${cupMoreDesc(cups[2])}`
                         );
                     }
                 ),
