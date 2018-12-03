@@ -1,11 +1,12 @@
-import { Agent, Game } from "regal";
+import { Agent, Game, noop } from "regal";
 import {
     Action,
     ExamineAction,
     OpenAction,
     PickupAction,
     PutAction,
-    removeAction
+    removeAction,
+    SubjectObjectAction
 } from "./actions";
 import { Room } from "./agents";
 import { on, safeShuffle } from "./common";
@@ -48,8 +49,8 @@ const cupActions = (cup: Cup, dir: string, num: string) => [
     new ExamineAction(
         `${dir} cup`,
         [`${dir} glass`, `${num} cup`, `${num} glass`],
-        _game => {
-            _game.output.writeNormal(
+        game => {
+            game.output.writeNormal(
                 `The ${dir} cup is clear, probably made of glass. It's halfway full of some ${
                     cup.color
                 } liquid.${cupMoreDesc(cup)}`
@@ -59,10 +60,73 @@ const cupActions = (cup: Cup, dir: string, num: string) => [
     new PickupAction(
         `${dir} cup`,
         [`${dir} glass`, `${num} cup`, `${num} glass`],
-        _game => {
-            _game.output.writeNormal(`You pick up the ${dir} cup.`);
-            _game.state.holding = `${dir} cup`;
+        game => {
+            game.output.writeNormal(`You pick up the ${dir} cup.`);
+            game.state.holding = `${dir} cup`;
+
+            // Remove all available pour actions in favor of new one
+            removeAction(game, "pour 'cup' -> 'lock'");
+            removeAction(game, "pour 'left cup' -> 'lock'");
+            removeAction(game, "pour 'middle cup' -> 'lock'");
+            removeAction(game, "pour 'right cup' -> 'lock'");
+
+            game.state.availableActions.push(
+                ...[
+                    new PutAction(
+                        "cup",
+                        [
+                            "glass",
+                            `${dir} cup`,
+                            `${dir} glass`,
+                            `${num} cup`,
+                            `${num} glass`
+                        ],
+                        "down",
+                        ["back", "counter", "away"],
+                        _game => {
+                            _game.output.writeNormal(
+                                `You put the ${dir} cup back on the counter.`
+                            );
+                            _game.state.holding = undefined;
+                            removeAction(_game, "put 'cup' -> 'down'");
+                            removeAction(game, "pour 'cup' -> 'lock'");
+                        }
+                    ),
+                    new SubjectObjectAction(
+                        "pour",
+                        ["dump", "throw"],
+                        "cup",
+                        [
+                            "glass",
+                            `${dir} cup`,
+                            `${dir} glass`,
+                            `${num} cup`,
+                            `${num} glass`
+                        ],
+                        "lock",
+                        ["padlock", "pad lock", "door"],
+                        true,
+                        _game => {
+                            _game.output.writeNormal(
+                                `You pour out the ${dir} cup.`
+                            );
+                            removeAction(_game, "pour 'cup' -> 'lock'");
+                        }
+                    )
+                ]
+            );
         }
+    ),
+    // This will never run. It's just here to hint that pouring is possible.
+    new SubjectObjectAction(
+        "pour",
+        ["dump", "throw"],
+        `${dir} cup`,
+        [`${dir} glass`, `${num} cup`, `${num} glass`],
+        "lock",
+        ["padlock", "pad lock", "door"],
+        true,
+        noop
     )
 ];
 
@@ -95,7 +159,7 @@ const nailActions = (room: ThreeCups) => [
                         "nails",
                         ["3 nails", "2 nails"],
                         "down",
-                        ["back"],
+                        ["back", "drawer", "counter", "away"],
                         _game => {
                             _game.output.writeNormal(
                                 "You put the nails back in the drawer."
@@ -241,6 +305,19 @@ const beginFunc = (_room: ThreeCups) =>
                 ...cupActions(cups[2], "right", "third"),
                 new ExamineAction("cup", ["glass"], _game =>
                     _game.output.writeNormal("Which cup?")
+                ),
+                new PickupAction("cup", ["glass"], _game =>
+                    _game.output.writeNormal("Which cup?")
+                ),
+                new SubjectObjectAction(
+                    "pour",
+                    ["dump", "throw"],
+                    "cup",
+                    ["glass"],
+                    "lock",
+                    ["padlock", "pad lock", "door"],
+                    false,
+                    _game => _game.output.writeNormal("Which cup?")
                 ),
                 new ExamineAction("drawer", [], _game => {
                     if (room.drawerIsOpen) {
