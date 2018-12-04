@@ -49,7 +49,21 @@ let r = Game.postStartCommand();
 writeOut(r);
 
 const interact = true;
-const commands = ["sacrifice vision", "pickup middle cup", "quit"];
+const commands = [
+    "sacrifice vision",
+    "pickup middle cup",
+    "pour middle cup on lock",
+    "put middle cup down",
+    "look cups",
+    "open drawer",
+    "pickup nails",
+    "put nails in cups",
+    "look cups",
+    "pickup right cup",
+    "pour cup on lock",
+    "look cups",
+    "quit"
+];
 
 let cmd: string;
 

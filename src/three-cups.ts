@@ -26,19 +26,19 @@ class Cup extends Agent {
 
 const milk = new Cup(
     "milk",
-    "white",
+    "some white liquid",
     "The nail is enveloped by the white liquid.",
     "You can't see the nail."
 );
 const water = new Cup(
     "water",
-    "clear",
+    "some clear liquid",
     "The nails sinks to the bottom quickly.",
     "The nail is sitting at the bottom."
 );
 const acid = new Cup(
     "acid",
-    "clear",
+    "some clear liquid",
     "The liquid begins to bubble violently.",
     "It's still fizzing. The nail appears to be dissolving."
 );
@@ -51,9 +51,9 @@ const cupActions = (cup: Cup, dir: string, num: string) => [
         [`${dir} glass`, `${num} cup`, `${num} glass`],
         game => {
             game.output.writeNormal(
-                `The ${dir} cup is clear, probably made of glass. It's halfway full of some ${
+                `The ${dir} cup is clear, probably made of glass. It contains ${
                     cup.color
-                } liquid.${cupMoreDesc(cup)}`
+                }.${cupMoreDesc(cup)}`
             );
         }
     ),
@@ -65,10 +65,10 @@ const cupActions = (cup: Cup, dir: string, num: string) => [
             game.state.holding = `${dir} cup`;
 
             // Remove all available pour actions in favor of new one
-            removeAction(game, "pour 'cup' -> 'lock'");
-            removeAction(game, "pour 'left cup' -> 'lock'");
-            removeAction(game, "pour 'middle cup' -> 'lock'");
-            removeAction(game, "pour 'right cup' -> 'lock'");
+            removeAction(game, "pour 'cup' -> 'lock'", true);
+            removeAction(game, "pour 'left cup' -> 'lock'", true);
+            removeAction(game, "pour 'middle cup' -> 'lock'", true);
+            removeAction(game, "pour 'right cup' -> 'lock'", true);
 
             game.state.availableActions.push(
                 ...[
@@ -110,6 +110,41 @@ const cupActions = (cup: Cup, dir: string, num: string) => [
                             _game.output.writeNormal(
                                 `You pour out the ${dir} cup.`
                             );
+
+                            if (cup.color !== "no liquid") {
+                                switch (cup.name) {
+                                    case "milk":
+                                        _game.output.write(
+                                            "The white liquid splashes onto the lock and door.",
+                                            "You get a feeling that this might give the lab an ant problem."
+                                        );
+                                        break;
+                                    case "water":
+                                        _game.output.write(
+                                            "The clear liquid spashes onto the lock and door."
+                                        );
+                                        break;
+                                    case "acid":
+                                        _game.output.write(
+                                            "As soon as the liquid hits the padlock, the metal hisses and starts to dissolve.",
+                                            "Within a few seconds, the padlock breaks apart and falls to the floor."
+                                        );
+                                        break;
+                                }
+                            }
+
+                            if (cup.hasNail) {
+                                _game.output.writeNormal(
+                                    "The nail falls onto the floor."
+                                );
+                                cup.hasNail = false;
+                            }
+
+                            cup.color = "no liquid";
+                            cup.afterNail = "The nail is sitting inside.";
+                            cup.nailReaction =
+                                "The nail clinks against the glass.";
+
                             removeAction(_game, "pour 'cup' -> 'lock'");
                         }
                     )
@@ -289,15 +324,15 @@ const beginFunc = (_room: ThreeCups) =>
                 new ExamineAction("cups", ["glasses"], _game => {
                     _game.output.writeNormal(
                         "Three glass cups sit in a row on the countertop. Each is about halfway full of some liquid.",
-                        `The left cup contains a ${
-                            cups[0].color
-                        } liquid.${cupMoreDesc(cups[0])}`,
-                        `The middle cup contains a ${
-                            cups[1].color
-                        } liquid.${cupMoreDesc(cups[1])}`,
-                        `The right cup contains a ${
-                            cups[2].color
-                        } liquid.${cupMoreDesc(cups[2])}`
+                        `The left cup contains ${cups[0].color}.${cupMoreDesc(
+                            cups[0]
+                        )}`,
+                        `The middle cup contains ${cups[1].color}.${cupMoreDesc(
+                            cups[1]
+                        )}`,
+                        `The right cup contains ${cups[2].color}.${cupMoreDesc(
+                            cups[2]
+                        )}`
                     );
                 }),
                 ...cupActions(cups[0], "left", "first"),

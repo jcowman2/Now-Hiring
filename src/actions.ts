@@ -56,12 +56,16 @@ const matchBeginning: MatchCheck<void, string> = (action, command, game) => {
     };
 };
 
-export const removeAction = (game: GameInstance<State>, actionName: string) => {
+export const removeAction = (
+    game: GameInstance<State>,
+    actionName: string,
+    allowFail: boolean = false
+) => {
     const idx = game.state.availableActions.findIndex(
         a => a.name === actionName
     );
 
-    if (idx === -1) {
+    if (idx === -1 && !allowFail) {
         throw new RegalError("Action doesn't exist.");
     }
 
