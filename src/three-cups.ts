@@ -129,6 +129,9 @@ const cupActions = (cup: Cup, dir: string, num: string) => [
                                             "As soon as the liquid hits the padlock, the metal hisses and starts to dissolve.",
                                             "Within a few seconds, the padlock breaks apart and falls to the floor."
                                         );
+                                        _game.output.writeMajor(
+                                            "This is the end of the demo. I hope you've enjoyed it, and check back soon for updates!"
+                                        );
                                         break;
                                 }
                             }
