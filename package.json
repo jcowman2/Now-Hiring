@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ts-node src/index.ts"
   },
   "author": "Joe Cowman <joe.r.cowman@gmail.com> (http://joecowman.com)",
   "license": "MIT",
@@ -18,6 +18,10 @@
     "util": "^0.11.1"
   },
   "dependencies": {
+    "readline-sync": "^1.4.9",
     "regal": "^0.6.1"
+  },
+  "prettier": {
+    "tabWidth": 4
   }
 }
