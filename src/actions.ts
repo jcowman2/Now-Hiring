@@ -7,7 +7,7 @@ import {
     TrackedEvent
 } from "regal";
 import { abilityList } from "./agents";
-import { log, on, simpleCap, State } from "./common";
+import { on, simpleCap, State } from "./common";
 import { promptSacrifice } from "./events";
 
 interface MatchResult<T> {

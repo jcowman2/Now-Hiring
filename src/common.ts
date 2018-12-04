@@ -1,9 +1,6 @@
 import { GameEventBuilder, GameInstance, on as _on } from "regal";
-import { inspect } from "util";
 import { Action } from "./actions";
 import { Abilities, Room } from "./agents";
-
-export const log = o => console.log(inspect(o, { depth: Infinity }));
 
 export interface State {
     abilities: Abilities;

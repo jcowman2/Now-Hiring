@@ -4,12 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "ts-node src/index.ts"
+    "test": "ts-node src/demo.ts",
+    "build": "rollup -c"
   },
   "author": "Joe Cowman <joe.r.cowman@gmail.com> (http://joecowman.com)",
   "license": "MIT",
   "devDependencies": {
     "prettier": "^1.15.3",
+    "readline-sync": "^1.4.9",
+    "rollup": "^0.67.4",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-typescript2": "^0.18.0",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.17.0",
@@ -18,7 +23,6 @@
     "util": "^0.11.1"
   },
   "dependencies": {
-    "readline-sync": "^1.4.9",
     "regal": "^0.6.1"
   },
   "prettier": {

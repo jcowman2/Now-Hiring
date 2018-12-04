@@ -1,7 +1,7 @@
 import { noop } from "regal";
 import { sacrificeAbilityAction } from "./actions";
 import { Abilities, abilityList, Room } from "./agents";
-import { log, on, simpleCap } from "./common";
+import { on, simpleCap } from "./common";
 import { ThreeCups } from "./three-cups";
 
 export const summarizeAbilities = on("SUM_ABILITIES", game => {
